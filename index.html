@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SIP Calculator & Goal Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --bg-elevated: #ffffff;
+      --bg-elevated-soft: #f8fafc;
+      --text: #0f172a;
+      --text-muted: #6b7280;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.12);
+      --accent-strong: #1d4ed8;
+      --danger: #dc2626;
+      --border-subtle: #e5e7eb;
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
+      --transition-fast: 0.18s ease-out;
+    }
+
+    body.dark {
+      --bg: #020617;
+      --bg-elevated: #020617;
+      --bg-elevated-soft: #020617;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --accent: #60a5fa;
+      --accent-soft: rgba(96, 165, 250, 0.16);
+      --accent-strong: #3b82f6;
+      --border-subtle: #1f2937;
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.85);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(120% 160% at 10% 0%, #e0ecff 0, #f9fafb 50%, #e5ecff 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 12px 32px;
+      transition: background 0.35s ease, color var(--transition-fast);
+    }
+
+    body.dark {
+      background: radial-gradient(120% 160% at 10% 0%, #020617 0, #020617 40%, #020617 100%);
+    }
+
+    .app-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(241, 245, 249, 0.9));
+      box-shadow: var(--shadow-soft);
+      border-radius: 28px;
+      padding: 22px 20px 26px;
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      transition: background var(--transition-fast), border-color var(--transition-fast);
+    }
+
+    body.dark .app-shell {
+      background: radial-gradient(140% 180% at 0% 0%, #020617 0, #020617 55%, #020617 100%);
+      border-color: rgba(15, 23, 42, 0.9);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 16px;
+      background: conic-gradient(from 200deg, #2563eb, #22c55e, #38bdf8, #a855f7, #2563eb);
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-logo-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      background: radial-gradient(circle at 20% 0%, #eff6ff 0, #1d4ed8 40%, #020617 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e5edff;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-text h1 {
+      margin: 0;
+      font-size: 19px;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      font-weight: 600;
+    }
+
+    .brand-text p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: var(--radius-pill);
+      background: rgba(15, 23, 42, 0.03);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    body.dark .chip {
+      background: rgba(15, 23, 42, 0.6);
+      border-color: rgba(30, 64, 175, 0.7);
+    }
+
+    .chip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+    }
+
+    .toggle-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .switch {
+      width: 40px;
+      height: 22px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.4);
+      position: relative;
+      transition: background var(--transition-fast);
+    }
+
+    .switch-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+      transition: transform var(--transition-fast);
+    }
+
+    body.dark .switch {
+      background: rgba(37, 99, 235, 0.9);
+    }
+
+    body.dark .switch-thumb {
+      transform: translateX(18px);
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .charts-top {
+      width: 100%;
+    }
+
+    .bottom-cards {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      width: 100%;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        padding: 16px 10px 24px;
+      }
+      .app-shell {
+        padding: 16px 14px 22px;
+        border-radius: 22px;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .bottom-cards {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: var(--bg-elevated);
+      border-radius: var(--radius-lg);
+      padding: 16px 16px 18px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 50px rgba(15, 23, 42, 0.14);
+      border-color: rgba(37, 99, 235, 0.25);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .pill {
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      color: var(--accent-strong);
+      background: var(--accent-soft);
+      font-weight: 500;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 12px;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 640px) {
+      form {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    label span.optional {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 400;
+      opacity: 0.8;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-prefix,
+    .input-suffix {
+      position: absolute;
+      left: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .input-suffix {
+      left: auto;
+      right: 10px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      padding: 9px 9px 9px 26px;
+      font-size: 13px;
+      outline: none;
+      background: linear-gradient(145deg, var(--bg-elevated-soft), var(--bg-elevated));
+      color: var(--text);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast), transform 0.08s ease-out;
+    }
+
+    input[type="number"]:focus {
+      border-color: var(--accent-strong);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.6), 0 14px 32px rgba(15, 23, 42, 0.3);
+      transform: translateY(-1px);
+      background: radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.06) 0, var(--bg-elevated) 55%);
+    }
+
+    input[type="number"]::placeholder {
+      color: rgba(148, 163, 184, 0.9);
+      font-size: 12px;
+    }
+
+    .field-error {
+      font-size: 11px;
+      color: var(--danger);
+      margin-top: 2px;
+      min-height: 13px;
+    }
+
+    .amount-in-words {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 0;
+      font-style: italic;
+      min-height: 14px;
+    }
+
+    .help-text {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .help-text strong {
+      font-weight: 600;
+      color: var(--accent-strong);
+    }
+
+    .actions {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .left-actions,
+    .right-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: var(--radius-pill);
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #0f172a;
+      color: #f9fafb;
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.6);
+      transition: background var(--transition-fast), transform 0.1s ease-out, box-shadow var(--transition-fast), color var(--transition-fast);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.6);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      box-shadow: none;
+    }
+
+    .btn-outline:hover {
+      background: rgba(148, 163, 184, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .btn-icon {
+      font-size: 14px;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      box-shadow: none;
+      padding-inline: 10px;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(148, 163, 184, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 640px) {
+      .summary-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .metric {
+      background: radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.06) 0, rgba(255, 255, 255, 0.9) 60%);
+      border-radius: var(--radius-md);
+      padding: 10px 11px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body.dark .metric {
+      background: radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.22) 0, rgba(15, 23, 42, 0.92) 65%);
+      border-color: rgba(37, 99, 235, 0.55);
+    }
+
+    .metric::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.4), transparent 60%);
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .metric-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 1px;
+    }
+
+    .metric-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .metric-highlight {
+      color: #22c55e;
+    }
+
+    body.dark .metric-highlight {
+      color: #4ade80;
+    }
+
+    .required-sip-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .required-sip-chip {
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: rgba(22, 163, 74, 0.1);
+      color: #16a34a;
+      font-weight: 600;
+      font-size: 10px;
+    }
+
+    body.dark .required-sip-chip {
+      background: rgba(22, 163, 74, 0.2);
+    }
+
+    .target-note {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .chart-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-rows: 220px 200px;
+      gap: 12px;
+      width: 100%;
+    }
+
+    @media (max-width: 640px) {
+      .charts-grid {
+        grid-template-rows: 200px 180px;
+      }
+    }
+
+    .chart-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.06), rgba(15, 23, 42, 0.02));
+      border-radius: var(--radius-md);
+      padding: 12px 12px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      overflow: hidden;
+    }
+
+    body.dark .chart-container {
+      background: radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.3), rgba(15, 23, 42, 1));
+      border-color: rgba(37, 99, 235, 0.65);
+    }
+
+    .chart-header {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 8px;
+    }
+
+    .chart-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .chart-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .chart-canvas-wrapper {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      width: 100%;
+    }
+
+    .chart-canvas-wrapper canvas {
+      display: block;
+      max-width: 100%;
+      width: 100% !important;
+      height: 100% !important;
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+    }
+
+    .status-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+
+    .status-dot.error {
+      background: var(--danger);
+    }
+
+    .swp-intro {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0 0 14px;
+    }
+
+    .swp-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .swp-form {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group-row {
+      grid-column: 1 / -1;
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .toggle-label {
+      white-space: nowrap;
+    }
+
+    .toggle-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-strong);
+      margin: 0;
+      vertical-align: middle;
+    }
+
+    .checkbox-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px 24px;
+      align-items: center;
+      grid-column: 1 / -1;
+    }
+
+    .checkbox-row .toggle-label {
+      margin: 0;
+    }
+
+    .swp-sustainability {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .swp-sustainability .card-title {
+      margin-bottom: 10px;
+    }
+
+    .heat-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-elevated-soft);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .heat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .heat-dot.green {
+      background: #22c55e;
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+    }
+
+    .heat-dot.yellow {
+      background: #eab308;
+      box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.3);
+    }
+
+    .heat-dot.red {
+      background: var(--danger);
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3);
+    }
+
+    .sustainability-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric-span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .wrap-text {
+      word-break: break-word;
+      font-size: 11px;
+    }
+
+    .help-inline {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .swp-table-wrap {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .swp-table-wrap .card-title {
+      margin-bottom: 8px;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      max-height: 280px;
+      overflow-y: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .data-table th {
+      background: var(--bg-elevated-soft);
+      color: var(--text-muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      color: var(--text);
+    }
+
+    .data-table tbody tr:hover {
+      background: rgba(37, 99, 235, 0.04);
+    }
+
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 11px;
+    }
+
+    .fade-in {
+      animation: fadeInUp 0.35s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media print {
+      body {
+        padding: 8px;
+        background: #ffffff;
+      }
+      .app-shell {
+        box-shadow: none;
+        border-radius: 0;
+        padding: 12px;
+      }
+      header .toggle-wrapper,
+      header .chip {
+        display: none !important;
+      }
+      .card {
+        box-shadow: none;
+        border-radius: 4px;
+        break-inside: avoid;
+      }
+      main {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .bottom-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 700px) {
+        .bottom-cards {
+          grid-template-columns: 1fr;
+        }
+      }
+      .charts-top {
+        width: 100%;
+      }
+      .chart-card .charts-grid {
+        min-height: 200px;
+      }
+      .btn {
+        display: none !important;
+      }
+      .actions {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <div class="brand">
+        <div class="brand-logo">
+          <div class="brand-logo-inner">₹</div>
+        </div>
+        <div class="brand-text">
+          <h1>
+            SIP Planner
+            <span class="badge">Wealth & Goal Engine</span>
+          </h1>
+          <p>Professional SIP calculator with goal planning & inflation adjustment.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="left-actions">
+          <button type="button" class="btn btn-primary" id="downloadPdfBtn">
+            <span class="btn-icon">⬇</span>
+            Download as PDF
+          </button>
+          <button type="button" class="btn btn-outline" id="resetBtn">
+            <span class="btn-icon">⟲</span>
+            Reset
+          </button>
+        </div>
+        <div class="right-actions">
+          <button type="button" class="btn btn-ghost" id="saveBtn">
+            💾 Save Scenario
+          </button>
+      </div>
+      </div>
+      
+      <div class="header-actions">
+        <div class="chip">
+          <span class="chip-dot"></span>
+          Real-time projections · Monthly compounding
+        </div>
+        <div class="toggle-wrapper" id="themeToggle">
+          <span>Light</span>
+          <div class="switch">
+            <div class="switch-thumb"></div>
+          </div>
+          <span>Dark</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- CHARTS ON TOP -->
+      <section class="card fade-in chart-card charts-top">
+        <div class="card-header">
+          <div class="card-title">Projection Visuals</div>
+          <span class="pill">Charts · Growth & Allocation</span>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-container">
+            <div class="chart-header">
+              <div class="chart-title">
+                <span class="legend-dot" style="background:#2563eb;"></span>
+                Wealth Growth Over Time
+              </div>
+              <div class="chart-meta" id="lineChartMeta">No data yet</div>
+            </div>
+            <div class="chart-canvas-wrapper">
+              <canvas id="growthChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-container">
+            <div class="chart-header">
+              <div class="chart-title">
+                <span class="legend-dot" style="background:#22c55e;"></span>
+                Invested vs Returns
+              </div>
+              <div class="chart-meta" id="barChartMeta">No data yet</div>
+            </div>
+            <div class="chart-canvas-wrapper">
+              <canvas id="allocationChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="bottom-cards">
+      <!-- SIP CARD -->
+      <section class="card fade-in">
+        <div class="card-header">
+          <div>
+            <div class="card-title">SIP Inputs & Goals</div>
+          </div>
+          <span class="pill">Planner · INR · Monthly</span>
+        </div>
+        <div class="help-text">
+          <span>
+            Compounding: <strong>Monthly</strong> · Currency: <strong>INR</strong>
+          </span>
+          <span>Calculator auto-updates as you type.</span>
+        </div>
+
+        <form id="sipForm" autocomplete="off">
+          <div class="form-group">
+            <label for="sipAmount">
+              Monthly SIP Amount
+              <span class="optional">required</span>
+            </label>
+            <div class="input-wrapper">
+              <span class="input-prefix">₹</span>
+              <input
+                type="number"
+                id="sipAmount"
+                min="0"
+                step="0.01"
+                placeholder="e.g., 10000"
+              />
+            </div>
+            <div class="amount-in-words" id="sipAmountWords" aria-live="polite"></div>
+            <div class="field-error" id="sipAmountError"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="annualReturn">
+              Expected Annual Return
+              <span class="optional">required</span>
+            </label>
+            <div class="input-wrapper">
+              <input
+                type="number"
+                id="annualReturn"
+                min="0"
+                step="0.1"
+                placeholder="e.g., 12"
+              />
+              <span class="input-suffix">%</span>
+            </div>
+            <div class="field-error" id="annualReturnError"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="years">
+              Investment Duration
+              <span class="optional">required</span>
+            </label>
+            <div class="input-wrapper">
+              <input
+                type="number"
+                id="years"
+                min="1"
+                step="1"
+                placeholder="e.g., 20"
+              />
+              <span class="input-suffix">years</span>
+            </div>
+            <div class="field-error" id="yearsError"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="inflation">
+              Expected Inflation Rate
+              <span class="optional">optional</span>
+            </label>
+            <div class="input-wrapper">
+              <input
+                type="number"
+                id="inflation"
+                min="0"
+                step="0.1"
+                placeholder="e.g., 5"
+              />
+              <span class="input-suffix">%</span>
+            </div>
+            <div class="field-error" id="inflationError"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="targetCorpus">
+              Target Corpus
+              <span class="optional">optional</span>
+            </label>
+            <div class="input-wrapper">
+              <span class="input-prefix">₹</span>
+              <input
+                type="number"
+                id="targetCorpus"
+                min="0"
+                step="0.01"
+                placeholder="e.g., 10000000"
+              />
+            </div>
+            <div class="amount-in-words" id="targetCorpusWords" aria-live="polite"></div>
+            <div class="field-error" id="targetCorpusError"></div>
+          </div>
+
+          <div class="summary-grid" id="summarySection">
+            <div class="metric">
+              <div class="metric-label">Future Value</div>
+              <div class="metric-value" id="futureValue">₹0.00</div>
+              <div class="metric-sub">
+                At end of tenure, before inflation.
+              </div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Total Investment</div>
+              <div class="metric-value" id="totalInvested">₹0.00</div>
+              <div class="metric-sub">
+                Principal contributed over the entire period.
+              </div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Estimated Returns</div>
+              <div class="metric-value metric-highlight" id="totalReturns">
+                ₹0.00
+              </div>
+              <div class="metric-sub">Future value minus total invested.</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Inflation-adjusted Corpus</div>
+              <div class="metric-value" id="inflationAdjusted">
+                ₹0.00
+              </div>
+              <div class="metric-sub">
+                In today's money
+                <span id="inflationTag"></span>
+              </div>
+            </div>
+
+            <div class="metric" id="requiredSipMetric" style="display: none;">
+              <div class="metric-label">Required Monthly SIP</div>
+              <div class="metric-value" id="requiredSip">₹0.00</div>
+              <div class="metric-sub">
+                <span class="required-sip-tag">
+                  To reach target corpus
+                  <span class="required-sip-chip" id="targetCorpusLabel">₹0.00</span>
+                </span>
+              </div>
+            </div>
+            <div class="target-note" id="targetNote" style="display:none;">
+              Required SIP is based on your target corpus and expected annual
+              return, assuming monthly compounding.
+            </div>
+          </div>
+
+          <div class="status-text" id="statusText">
+            <span class="status-dot"></span>
+            Ready. Enter your SIP details to project your wealth.
+          </div>
+        </form>
+      </section>
+
+      <!-- SWP WITHDRAWAL CARD -->
+      <section class="card fade-in" id="swpCard">
+        <div class="card-header">
+          <div class="card-title">SWP Withdrawal</div>
+          <span class="pill">During or after SIP</span>
+        </div>
+        <p class="swp-intro">Start withdrawals from a chosen year (1 = same year as SIP, or after accumulation). Corpus can grow during overlap.</p>
+        <div class="swp-form">
+          <div class="form-group">
+            <label for="swpStartYear">Start SWP from year</label>
+            <div class="input-wrapper">
+              <input type="number" id="swpStartYear" min="1" step="1" placeholder="e.g. 1 or 20" title="1 = with SIP, or investment duration = after SIP" />
+              <span class="input-suffix">year</span>
+            </div>
+            <div class="field-error" id="swpStartYearError"></div>
+            <div class="help-inline" id="swpStartYearHelp">1 = same year as SIP; use investment duration to start after SIP.</div>
+          </div>
+          <div class="form-group">
+            <label for="swpMonthly">Monthly withdrawal amount (₹)</label>
+            <div class="input-wrapper">
+              <span class="input-prefix">₹</span>
+              <input type="number" id="swpMonthly" min="0" step="0.01" placeholder="e.g., 50000" />
+            </div>
+            <div class="amount-in-words" id="swpMonthlyWords" aria-live="polite"></div>
+            <div class="field-error" id="swpMonthlyError"></div>
+          </div>
+          <div class="form-group">
+            <label for="swpYears">SWP duration (years)</label>
+            <div class="input-wrapper">
+              <input type="number" id="swpYears" min="1" step="1" placeholder="e.g., 25" />
+              <span class="input-suffix">years</span>
+            </div>
+            <div class="field-error" id="swpYearsError"></div>
+          </div>
+          <div class="checkbox-row">
+            <label class="toggle-label">
+              <input type="checkbox" id="swpInflationAdjusted" />
+              <span>Inflation-adjusted withdrawal</span>
+            </label>
+            <label class="toggle-label">
+              <input type="checkbox" id="swpContinueGrowth" checked />
+              <span>Continue growth during SWP</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label for="swpReturn">Expected return during SWP (%)</label>
+            <div class="input-wrapper">
+              <input type="number" id="swpReturn" min="0" step="0.1" placeholder="e.g., 8" />
+              <span class="input-suffix">%</span>
+            </div>
+            <div class="field-error" id="swpReturnError"></div>
+          </div>
+        </div>
+        <div class="swp-sustainability" id="swpSustainability">
+          <div class="card-title">Sustainability & Analytics</div>
+          <div class="heat-indicator" id="heatIndicator">
+            <span class="heat-dot"></span>
+            <span class="heat-label" id="heatLabel">—</span>
+          </div>
+          <div class="sustainability-grid" id="sustainabilityGrid">
+            <div class="metric">
+              <div class="metric-label">SWP will last</div>
+              <div class="metric-value" id="swpYearsLast">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Total withdrawn</div>
+              <div class="metric-value" id="swpTotalWithdrawn">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Safe SWP (4% rule)</div>
+              <div class="metric-value" id="swpSafeMonthly">—</div>
+            </div>
+            <div class="metric metric-span-2">
+              <div class="metric-label">Suggested monthly SWP (if no amount entered)</div>
+              <div class="metric-value metric-sub wrap-text" id="swpSuggested">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="swp-table-wrap" id="swpTableWrap">
+          <div class="card-title">Month-wise SWP data</div>
+          <div class="table-scroll">
+            <table class="data-table" id="swpTable">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Opening Balance</th>
+                  <th>Growth</th>
+                  <th>Withdrawal</th>
+                  <th>Closing Balance</th>
+                </tr>
+              </thead>
+              <tbody id="swpTableBody"></tbody>
+            </table>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" id="exportCsvBtn">Export CSV</button>
+        </div>
+      </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const currencyFormatter = new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+    function formatCurrency(amount) {
+      return currencyFormatter.format(isFinite(amount) ? amount : 0);
+    }
+
+    /** Converts a number to Indian English words (e.g. 10000 → "Ten thousand only"). */
+    function numberToWordsInr(num) {
+      if (num === null || num === "" || isNaN(num) || num < 0) return "";
+      var n = Math.floor(Number(num));
+      if (n === 0) return "Zero only";
+      var ones = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+      var tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+      function toHundred(x) {
+        if (x === 0) return "";
+        if (x < 20) return ones[x];
+        return tens[Math.floor(x / 10)] + (x % 10 ? " " + ones[x % 10] : "");
+      }
+      function toThousand(x) {
+        if (x === 0) return "";
+        var h = Math.floor(x / 100), r = x % 100;
+        var part = (h ? ones[h] + " hundred " : "") + toHundred(r);
+        return part.trim();
+      }
+      var crore = Math.floor(n / 1e7);
+      var lakh = Math.floor((n % 1e7) / 1e5);
+      var thousand = Math.floor((n % 1e5) / 1e3);
+      var rest = n % 1e3;
+      var parts = [];
+      if (crore) parts.push(toThousand(crore) + " crore");
+      if (lakh) parts.push(toThousand(lakh) + " lakh");
+      if (thousand) parts.push(toThousand(thousand) + " thousand");
+      if (rest) parts.push(toThousand(rest));
+      var str = parts.join(" ").trim().replace(/\s+/g, " ");
+      if (!str) return "Zero only";
+      return str.charAt(0).toUpperCase() + str.slice(1) + " only";
+    }
+
+    function updateAmountWords() {
+      var sipVal = sipAmountInput.value.trim();
+      var targetVal = targetCorpusInput.value.trim();
+      var swpVal = document.getElementById("swpMonthly") && document.getElementById("swpMonthly").value.trim();
+      sipAmountWordsEl.textContent = sipVal && !isNaN(parseFloat(sipVal)) ? numberToWordsInr(parseFloat(sipVal)) : "";
+      targetCorpusWordsEl.textContent = targetVal && !isNaN(parseFloat(targetVal)) ? numberToWordsInr(parseFloat(targetVal)) : "";
+      if (swpMonthlyWordsEl) swpMonthlyWordsEl.textContent = swpVal && !isNaN(parseFloat(swpVal)) ? numberToWordsInr(parseFloat(swpVal)) : "";
+    }
+
+    function formatPercent(value) {
+      return value.toFixed(2) + "%";
+    }
+
+    function calculateSipFutureValue(monthlySip, annualRatePercent, years) {
+      const months = years * 12;
+      if (months <= 0 || monthlySip <= 0) return { futureValue: 0, totalInvested: 0 };
+
+      const monthlyRate = annualRatePercent / 100 / 12;
+      const totalInvested = monthlySip * months;
+
+      let futureValue;
+      if (monthlyRate === 0) {
+        futureValue = totalInvested;
+      } else {
+        const factor = Math.pow(1 + monthlyRate, months);
+        futureValue = monthlySip * ((factor - 1) / monthlyRate) * (1 + monthlyRate);
+      }
+
+      return { futureValue, totalInvested };
+    }
+
+    function adjustForInflation(futureValue, annualInflationPercent, years) {
+      if (!annualInflationPercent || annualInflationPercent <= 0 || years <= 0) {
+        return futureValue;
+      }
+      const months = years * 12;
+      const monthlyInflation = annualInflationPercent / 100 / 12;
+      const inflationFactor = Math.pow(1 + monthlyInflation, months);
+      return futureValue / inflationFactor;
+    }
+
+    function calculateRequiredSip(targetCorpus, annualRatePercent, years) {
+      const months = years * 12;
+      if (!targetCorpus || targetCorpus <= 0 || months <= 0) return 0;
+
+      const monthlyRate = annualRatePercent / 100 / 12;
+
+      if (monthlyRate === 0) {
+        return targetCorpus / months;
+      }
+
+      const factor = Math.pow(1 + monthlyRate, months);
+      const denominator = ((factor - 1) / monthlyRate) * (1 + monthlyRate);
+
+      if (denominator === 0) return 0;
+      return targetCorpus / denominator;
+    }
+
+    function buildGrowthSeries(monthlySip, annualRatePercent, years) {
+      const months = years * 12;
+      const monthlyRate = annualRatePercent / 100 / 12;
+      const labels = [];
+      const wealthData = [];
+      const investedData = [];
+
+      let wealth = 0;
+      let invested = 0;
+
+      for (let m = 1; m <= months; m++) {
+        invested += monthlySip;
+        wealth = wealth * (1 + monthlyRate) + monthlySip;
+
+        if (m % 12 === 0 || m === 1 || m === months) {
+          const yearLabel = (m / 12).toFixed(1).replace(".0", "");
+          labels.push(yearLabel + "y");
+          wealthData.push(parseFloat(wealth.toFixed(2)));
+          investedData.push(parseFloat(invested.toFixed(2)));
+        }
+      }
+
+      return { labels, wealthData, investedData };
+    }
+
+    function getSwpInputs() {
+      var m = parseFloat(document.getElementById("swpMonthly").value);
+      var y = parseFloat(document.getElementById("swpYears").value);
+      var r = parseFloat(document.getElementById("swpReturn").value);
+      var startY = parseFloat(document.getElementById("swpStartYear").value);
+      return {
+        monthlyWithdrawal: isNaN(m) ? null : m,
+        years: isNaN(y) ? null : y,
+        annualReturn: isNaN(r) ? null : r,
+        startSwpYear: isNaN(startY) ? null : startY,
+        inflationAdjusted: document.getElementById("swpInflationAdjusted").checked,
+        continueGrowth: document.getElementById("swpContinueGrowth").checked
+      };
+    }
+
+    function runSwpSimulation(startCorpus, swpInputs, inflationPct, overlap) {
+      var monthlyWithdrawal = swpInputs.monthlyWithdrawal;
+      var swpYears = swpInputs.years != null ? Math.max(1, swpInputs.years) : 25;
+      var startSwpYear = overlap && overlap.startSwpYear != null ? Math.max(1, overlap.startSwpYear) : (overlap && overlap.sipYears ? overlap.sipYears : 1);
+      var sipYears = overlap && overlap.sipYears != null ? overlap.sipYears : startSwpYear;
+      var monthlySip = (overlap && overlap.monthlySip != null) ? overlap.monthlySip : 0;
+      var sipMonthsRemaining = Math.max(0, sipYears * 12 - (startSwpYear - 1) * 12);
+
+      var monthlyRate = (swpInputs.continueGrowth && swpInputs.annualReturn != null)
+        ? swpInputs.annualReturn / 100 / 12
+        : 0;
+      var inflationMonthly = (inflationPct && swpInputs.inflationAdjusted) ? inflationPct / 100 / 12 : 0;
+      var months = swpYears * 12;
+      var withdrawal = monthlyWithdrawal != null && monthlyWithdrawal > 0 ? monthlyWithdrawal : 0;
+      var rows = [];
+      var balance = startCorpus != null ? startCorpus : 0;
+      var totalWithdrawn = 0;
+      var depletionMonth = null;
+      var currentWithdrawal = withdrawal;
+
+      for (var m = 1; m <= months; m++) {
+        if (m <= sipMonthsRemaining) balance += monthlySip;
+        var opening = balance;
+        var growth = balance * monthlyRate;
+        balance = balance * (1 + monthlyRate);
+        var actualWithdrawal = 0;
+        if (currentWithdrawal > 0) {
+          actualWithdrawal = Math.min(currentWithdrawal, balance);
+          balance -= actualWithdrawal;
+          totalWithdrawn += actualWithdrawal;
+          if (balance <= 0 && depletionMonth === null) depletionMonth = m;
+        }
+        rows.push({
+          month: m,
+          opening: opening,
+          growth: growth,
+          withdrawal: actualWithdrawal,
+          closing: Math.max(0, balance)
+        });
+        if (swpInputs.inflationAdjusted && inflationMonthly > 0) {
+          currentWithdrawal = currentWithdrawal * (1 + inflationMonthly);
+        }
+        if (balance <= 0) break;
+      }
+      var effectiveStartCorpus = startCorpus != null ? startCorpus : 0;
+      var finalBalance = balance;
+      var safeMonthly4 = (effectiveStartCorpus + (sipMonthsRemaining > 0 ? monthlySip * sipMonthsRemaining : 0)) * (4 / 100) / 12;
+      if (effectiveStartCorpus <= 0 && sipMonthsRemaining > 0) safeMonthly4 = (monthlySip * sipMonthsRemaining) * (4 / 100) / 12;
+      var suggested = {
+        conservative: effectiveStartCorpus * (3 / 100) / 12,
+        moderate: effectiveStartCorpus * (4 / 100) / 12,
+        aggressive: effectiveStartCorpus * (5.5 / 100) / 12
+      };
+      var yearsLast = depletionMonth != null ? (depletionMonth / 12).toFixed(1) : swpYears.toString();
+      var heat = "green";
+      if (depletionMonth != null) heat = "red";
+      else if (finalBalance < effectiveStartCorpus * 0.5 && effectiveStartCorpus > 0) heat = "yellow";
+      else if (finalBalance >= (effectiveStartCorpus || 1) * 1.05) heat = "green";
+      else heat = "yellow";
+      return {
+        rows: rows,
+        totalWithdrawn: totalWithdrawn,
+        finalBalance: finalBalance,
+        depletionMonth: depletionMonth,
+        yearsLast: yearsLast,
+        safeMonthly4: safeMonthly4,
+        suggested: suggested,
+        heat: heat,
+        startCorpus: effectiveStartCorpus,
+        startSwpYear: startSwpYear,
+        sipYears: sipYears
+      };
+    }
+
+    function buildCombinedSeries(sipPart, swpResult) {
+      if (!swpResult || !swpResult.rows.length) return null;
+      var labels = (sipPart && sipPart.labels) ? sipPart.labels.slice() : [];
+      var wealthData = (sipPart && sipPart.wealthData) ? sipPart.wealthData.slice() : [];
+      var startSwpYear = swpResult.startSwpYear != null ? swpResult.startSwpYear : lastAccumulationYears;
+      var step = Math.max(1, Math.floor(swpResult.rows.length / 24));
+      for (var i = 0; i < swpResult.rows.length; i++) {
+        if (i % step === 0 || i === swpResult.rows.length - 1) {
+          var m = swpResult.rows[i].month;
+          labels.push((startSwpYear + (m - 1) / 12).toFixed(1).replace(".0", "") + "y");
+          wealthData.push(swpResult.rows[i].closing);
+        }
+      }
+      return { labels: labels, wealthData: wealthData };
+    }
+
+    function buildSipSeriesUpToYear(years) {
+      if (!years || years < 1) return { labels: [], wealthData: [], investedData: [] };
+      var monthlySip = parseFloat(sipAmountInput.value) || 0;
+      var annualReturn = parseFloat(annualReturnInput.value) || 0;
+      return buildGrowthSeries(monthlySip, annualReturn, years);
+    }
+
+    const sipAmountInput = document.getElementById("sipAmount");
+    const annualReturnInput = document.getElementById("annualReturn");
+    const yearsInput = document.getElementById("years");
+    const inflationInput = document.getElementById("inflation");
+    const targetCorpusInput = document.getElementById("targetCorpus");
+
+    const sipAmountError = document.getElementById("sipAmountError");
+    const annualReturnError = document.getElementById("annualReturnError");
+    const yearsError = document.getElementById("yearsError");
+    const inflationError = document.getElementById("inflationError");
+    const targetCorpusError = document.getElementById("targetCorpusError");
+    const sipAmountWordsEl = document.getElementById("sipAmountWords");
+    const targetCorpusWordsEl = document.getElementById("targetCorpusWords");
+    const swpMonthlyWordsEl = document.getElementById("swpMonthlyWords");
+
+    const futureValueEl = document.getElementById("futureValue");
+    const totalInvestedEl = document.getElementById("totalInvested");
+    const totalReturnsEl = document.getElementById("totalReturns");
+    const inflationAdjustedEl = document.getElementById("inflationAdjusted");
+    const inflationTagEl = document.getElementById("inflationTag");
+    const requiredSipMetric = document.getElementById("requiredSipMetric");
+    const requiredSipEl = document.getElementById("requiredSip");
+    const targetCorpusLabel = document.getElementById("targetCorpusLabel");
+    const targetNote = document.getElementById("targetNote");
+    const statusText = document.getElementById("statusText");
+
+    const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const themeToggle = document.getElementById("themeToggle");
+    const lineChartMeta = document.getElementById("lineChartMeta");
+    const barChartMeta = document.getElementById("barChartMeta");
+
+    const growthCanvas = document.getElementById("growthChart");
+    const allocationCanvas = document.getElementById("allocationChart");
+
+    var heatDot = document.querySelector("#heatIndicator .heat-dot");
+    var heatLabel = document.getElementById("heatLabel");
+    var swpYearsLastEl = document.getElementById("swpYearsLast");
+    var swpTotalWithdrawnEl = document.getElementById("swpTotalWithdrawn");
+    var swpSafeMonthlyEl = document.getElementById("swpSafeMonthly");
+    var swpSuggestedEl = document.getElementById("swpSuggested");
+    var swpTableBody = document.getElementById("swpTableBody");
+    var swpTableWrap = document.getElementById("swpTableWrap");
+    var exportCsvBtn = document.getElementById("exportCsvBtn");
+
+    let growthChartInstance = null;
+    let allocationChartInstance = null;
+
+    const STORAGE_KEY = "sipPlannerState.v1";
+    var lastAccumulationFV = 0;
+    var lastAccumulationYears = 0;
+    var lastTotalInvested = 0;
+    var lastSipSeries = null;
+    var lastSwpResult = null;
+
+    function getInputValues() {
+      const sip = parseFloat(sipAmountInput.value);
+      const annual = parseFloat(annualReturnInput.value);
+      const years = parseFloat(yearsInput.value);
+      const inflation = parseFloat(inflationInput.value);
+      const target = parseFloat(targetCorpusInput.value);
+
+      return {
+        monthlySip: isNaN(sip) ? null : sip,
+        annualReturn: isNaN(annual) ? null : annual,
+        years: isNaN(years) ? null : years,
+        inflation: isNaN(inflation) ? null : inflation,
+        targetCorpus: isNaN(target) ? null : target
+      };
+    }
+
+    function updateSwpUI() {
+      var sipYears = lastAccumulationYears;
+      var monthlySip = parseFloat(sipAmountInput.value) || 0;
+      var annualReturn = parseFloat(annualReturnInput.value) || 0;
+      var inflation = inflationInput.value.trim() ? parseFloat(inflationInput.value) : 0;
+      if (isNaN(inflation)) inflation = 0;
+      var inputs = getSwpInputs();
+      if (!sipYears || sipYears < 1) {
+        if (heatDot) { heatDot.className = "heat-dot"; }
+        if (heatLabel) heatLabel.textContent = "Enter Accumulation first";
+        if (swpYearsLastEl) swpYearsLastEl.textContent = "—";
+        if (swpTotalWithdrawnEl) swpTotalWithdrawnEl.textContent = "—";
+        if (swpSafeMonthlyEl) swpSafeMonthlyEl.textContent = "—";
+        if (swpSuggestedEl) swpSuggestedEl.textContent = "—";
+        if (swpTableBody) swpTableBody.innerHTML = "";
+        lastSwpResult = null;
+        return;
+      }
+      var startSwpYear = inputs.startSwpYear != null ? inputs.startSwpYear : sipYears;
+      startSwpYear = Math.max(1, Math.min(sipYears, Math.floor(startSwpYear)));
+      var startCorpus = 0;
+      if (startSwpYear > 1) {
+        var sipOnlyMonths = (startSwpYear - 1) * 12;
+        var monthlyRateSip = annualReturn / 100 / 12;
+        for (var i = 0; i < sipOnlyMonths; i++) {
+          startCorpus = startCorpus * (1 + monthlyRateSip) + monthlySip;
+        }
+      }
+      if (inputs.annualReturn == null && inputs.continueGrowth) inputs.annualReturn = annualReturn;
+      var res = runSwpSimulation(startCorpus, inputs, inflation, { startSwpYear: startSwpYear, sipYears: sipYears, monthlySip: monthlySip, annualReturn: annualReturn });
+      lastSwpResult = res;
+      if (!res) return;
+      if (heatDot) {
+        heatDot.className = "heat-dot " + res.heat;
+      }
+      if (heatLabel) {
+        heatLabel.textContent = res.heat === "green" ? "Corpus growing" : res.heat === "yellow" ? "Stable" : "Depleting";
+      }
+      if (swpYearsLastEl) swpYearsLastEl.textContent = res.yearsLast + " years";
+      if (swpTotalWithdrawnEl) swpTotalWithdrawnEl.textContent = formatCurrency(res.totalWithdrawn);
+      if (swpSafeMonthlyEl) swpSafeMonthlyEl.textContent = res.startCorpus > 0 ? (formatCurrency(res.safeMonthly4) + " (4% rule)") : "— (4% rule needs corpus)";
+      if (swpSuggestedEl) {
+        if (inputs.monthlyWithdrawal == null || inputs.monthlyWithdrawal <= 0) {
+          if (res.startCorpus > 0) {
+            swpSuggestedEl.textContent = "Conservative " + formatCurrency(res.suggested.conservative) + " · Moderate " + formatCurrency(res.suggested.moderate) + " · Aggressive " + formatCurrency(res.suggested.aggressive);
+          } else {
+            swpSuggestedEl.textContent = "Start from year 2 or after SIP to see suggested SWP (4% rule).";
+          }
+        } else {
+          swpSuggestedEl.textContent = "—";
+        }
+      }
+      if (swpTableBody) {
+        var html = "";
+        var step = Math.max(1, Math.floor(res.rows.length / 100));
+        for (var i = 0; i < res.rows.length; i++) {
+          if (i % step !== 0 && i !== res.rows.length - 1) continue;
+          var row = res.rows[i];
+          html += "<tr><td>" + row.month + "</td><td>" + formatCurrency(row.opening) + "</td><td>" + formatCurrency(row.growth) + "</td><td>" + formatCurrency(row.withdrawal) + "</td><td>" + formatCurrency(row.closing) + "</td></tr>";
+        }
+        swpTableBody.innerHTML = html;
+      }
+    }
+
+    function validateInputs(values) {
+      let valid = true;
+
+      sipAmountError.textContent = "";
+      annualReturnError.textContent = "";
+      yearsError.textContent = "";
+      inflationError.textContent = "";
+      targetCorpusError.textContent = "";
+      statusText.querySelector(".status-dot").classList.remove("error");
+
+      if (values.monthlySip === null || values.monthlySip <= 0) {
+        sipAmountError.textContent = "Enter a positive monthly SIP amount.";
+        valid = false;
+      }
+      if (values.annualReturn === null || values.annualReturn < 0) {
+        annualReturnError.textContent =
+          "Enter a non-negative annual return rate.";
+        valid = false;
+      }
+      if (values.years === null || values.years <= 0) {
+        yearsError.textContent = "Investment duration must be at least 1 year.";
+        valid = false;
+      }
+      if (values.inflation !== null && values.inflation < 0) {
+        inflationError.textContent = "Inflation cannot be negative.";
+        valid = false;
+      }
+      if (values.targetCorpus !== null && values.targetCorpus <= 0) {
+        targetCorpusError.textContent = "Target corpus must be positive.";
+        valid = false;
+      }
+
+      if (!valid) {
+        statusText.querySelector(".status-dot").classList.add("error");
+        statusText.lastChild.nodeValue =
+          " Please fix the highlighted fields to see projections.";
+      } else {
+        statusText.lastChild.nodeValue =
+          " Projections based on current assumptions. Not investment advice.";
+      }
+
+      return valid;
+    }
+
+    function renderCharts(series, totalInvested, futureValue) {
+      const ctxLine = growthCanvas.getContext("2d");
+      const ctxBar = allocationCanvas.getContext("2d");
+
+      const totalReturns = Math.max(futureValue - totalInvested, 0);
+      var useCombined = lastSwpResult && lastSwpResult.rows && lastSwpResult.rows.length > 0;
+      var sipPart = useCombined && lastSwpResult.startSwpYear > 1
+        ? buildSipSeriesUpToYear(lastSwpResult.startSwpYear - 1)
+        : (useCombined ? { labels: [], wealthData: [], investedData: [] } : null);
+      var combined = useCombined ? buildCombinedSeries(sipPart, lastSwpResult) : null;
+
+      var labels = combined ? combined.labels : series.labels;
+      var wealthData = combined ? combined.wealthData : series.wealthData;
+      var investedData = series.investedData;
+      if (combined && sipPart && sipPart.investedData) {
+        var extendedInvested = sipPart.investedData.slice();
+        var lastInv = extendedInvested.length ? extendedInvested[extendedInvested.length - 1] : 0;
+        for (var i = extendedInvested.length; i < wealthData.length; i++) {
+          extendedInvested.push(lastInv);
+        }
+        investedData = extendedInvested;
+      } else if (combined) {
+        var ext = [];
+        for (var j = 0; j < wealthData.length; j++) ext.push(0);
+        investedData = ext;
+      }
+
+      if (growthChartInstance) {
+        growthChartInstance.data.labels = labels;
+        growthChartInstance.data.datasets[0].data = wealthData;
+        growthChartInstance.data.datasets[1].data = investedData;
+        growthChartInstance.update();
+      } else {
+        growthChartInstance = new Chart(ctxLine, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Projected Corpus",
+                data: wealthData,
+                borderColor: "#2563eb",
+                backgroundColor: "rgba(37, 99, 235, 0.1)",
+                borderWidth: 2,
+                tension: 0.25,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 3
+              },
+              {
+                label: "Total Invested",
+                data: investedData,
+                borderColor: "#9ca3af",
+                borderDash: [4, 4],
+                borderWidth: 1.6,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                labels: {
+                  boxWidth: 10,
+                  font: { size: 10 }
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    const label = ctx.dataset.label || "";
+                    const value = ctx.parsed.y || 0;
+                    return label + ": " + formatCurrency(value);
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: {
+                  font: { size: 10 }
+                },
+                grid: { display: false }
+              },
+              y: {
+                ticks: {
+                  font: { size: 10 },
+                  callback: function (val) {
+                    return "₹" + (val / 100000).toFixed(1) + "L";
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      var barLabels = ["Invested", "Returns"];
+      var barData = [totalInvested, totalReturns];
+      var barColors = ["#0ea5e9", "#22c55e"];
+      if (useCombined && lastSwpResult.totalWithdrawn > 0) {
+        barLabels = ["Invested", "Returns", "Withdrawn"];
+        barData = [totalInvested, totalReturns, lastSwpResult.totalWithdrawn];
+        barColors = ["#0ea5e9", "#22c55e", "#f59e0b"];
+      }
+      if (allocationChartInstance) {
+        allocationChartInstance.data.labels = barLabels;
+        allocationChartInstance.data.datasets[0].data = barData;
+        allocationChartInstance.data.datasets[0].backgroundColor = barColors;
+        allocationChartInstance.update();
+      } else {
+        allocationChartInstance = new Chart(ctxBar, {
+          type: "bar",
+          data: {
+            labels: barLabels,
+            datasets: [
+              {
+                label: "Amount",
+                data: barData,
+                backgroundColor: barColors,
+                borderRadius: 8,
+                maxBarThickness: 48
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    const val = ctx.parsed.y || 0;
+                    return formatCurrency(val);
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: { font: { size: 10 } },
+                grid: { display: false }
+              },
+              y: {
+                ticks: {
+                  font: { size: 10 },
+                  callback: function (val) {
+                    return "₹" + (val / 100000).toFixed(1) + "L";
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      lineChartMeta.textContent = useCombined ? "SIP + SWP · " + (labels[labels.length - 1] || "0y") : "Corpus vs Invested · " + (labels[labels.length - 1] || "0y");
+      barChartMeta.textContent = useCombined && lastSwpResult.totalWithdrawn > 0 ? "Invested vs Returns vs Withdrawn" : "Break-up at maturity · Returns: " + (((totalReturns / (futureValue || 1)) * 100).toFixed(1)) + "%";
+    }
+
+    function recompute() {
+      updateAmountWords();
+      const values = getInputValues();
+      const valid = validateInputs(values);
+
+      const hasCoreInputs =
+        values.monthlySip !== null &&
+        values.annualReturn !== null &&
+        values.years !== null;
+
+      if (!hasCoreInputs || !valid) {
+        lastAccumulationFV = 0;
+        lastAccumulationYears = 0;
+        updateSwpUI();
+        futureValueEl.textContent = "₹0.00";
+        totalInvestedEl.textContent = "₹0.00";
+        totalReturnsEl.textContent = "₹0.00";
+        inflationAdjustedEl.textContent = "₹0.00";
+        inflationTagEl.textContent = "";
+        requiredSipMetric.style.display = "none";
+        targetNote.style.display = "none";
+        lineChartMeta.textContent = "No data yet";
+        barChartMeta.textContent = "No data yet";
+        return;
+      }
+
+      const result = calculateSipFutureValue(
+        values.monthlySip,
+        values.annualReturn,
+        values.years
+      );
+      const futureValue = result.futureValue;
+      const totalInvested = result.totalInvested;
+      const totalReturns = futureValue - totalInvested;
+
+      const inflationAdjusted = adjustForInflation(
+        futureValue,
+        values.inflation || 0,
+        values.years
+      );
+
+      let requiredSip = 0;
+      if (values.targetCorpus && values.targetCorpus > 0) {
+        requiredSip = calculateRequiredSip(
+          values.targetCorpus,
+          values.annualReturn,
+          values.years
+        );
+      }
+
+      futureValueEl.textContent = formatCurrency(futureValue);
+      totalInvestedEl.textContent = formatCurrency(totalInvested);
+      totalReturnsEl.textContent = formatCurrency(Math.max(totalReturns, 0));
+      inflationAdjustedEl.textContent = formatCurrency(inflationAdjusted);
+
+      if (values.inflation && values.inflation > 0) {
+        inflationTagEl.textContent = " @ " + formatPercent(values.inflation) + " p.a.";
+      } else {
+        inflationTagEl.textContent = " (no inflation applied)";
+      }
+
+      if (requiredSip > 0) {
+        requiredSipMetric.style.display = "block";
+        targetNote.style.display = "block";
+        requiredSipEl.textContent = formatCurrency(requiredSip);
+        targetCorpusLabel.textContent = formatCurrency(values.targetCorpus);
+      } else {
+        requiredSipMetric.style.display = "none";
+        targetNote.style.display = "none";
+      }
+
+      lastAccumulationFV = futureValue;
+      lastAccumulationYears = values.years;
+      lastTotalInvested = totalInvested;
+      const series = buildGrowthSeries(
+        values.monthlySip,
+        values.annualReturn,
+        values.years
+      );
+      lastSipSeries = series;
+      updateSwpUI();
+      renderCharts(series, totalInvested, futureValue);
+    }
+
+    function saveStateToLocalStorage() {
+      const values = getInputValues();
+      const payload = {
+        monthlySip: values.monthlySip,
+        annualReturn: values.annualReturn,
+        years: values.years,
+        inflation: values.inflation,
+        targetCorpus: values.targetCorpus,
+        theme: document.body.classList.contains("dark") ? "dark" : "light",
+        timestamp: Date.now()
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        statusText.lastChild.nodeValue = " Scenario saved locally on this device.";
+      } catch (e) {
+        console.error("Unable to save state", e);
+      }
+    }
+
+    function restoreStateFromLocalStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+
+        const state = JSON.parse(raw);
+        if (!state) return;
+
+        if (typeof state.monthlySip === "number") {
+          sipAmountInput.value = state.monthlySip;
+        }
+        if (typeof state.annualReturn === "number") {
+          annualReturnInput.value = state.annualReturn;
+        }
+        if (typeof state.years === "number") {
+          yearsInput.value = state.years;
+        }
+        if (typeof state.inflation === "number") {
+          inflationInput.value = state.inflation;
+        }
+        if (typeof state.targetCorpus === "number") {
+          targetCorpusInput.value = state.targetCorpus;
+        }
+        if (state.theme === "dark") {
+          document.body.classList.add("dark");
+        }
+
+        recompute();
+      } catch (e) {
+        console.error("Unable to restore state", e);
+      }
+    }
+
+    themeToggle.addEventListener("click", function () {
+      document.body.classList.toggle("dark");
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const state = raw ? JSON.parse(raw) : {};
+        state.theme = document.body.classList.contains("dark")
+          ? "dark"
+          : "light";
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error("Unable to persist theme", e);
+      }
+    });
+
+    downloadPdfBtn.addEventListener("click", function () {
+      window.print();
+    });
+
+    resetBtn.addEventListener("click", function () {
+      sipAmountInput.value = "";
+      annualReturnInput.value = "";
+      yearsInput.value = "";
+      inflationInput.value = "";
+      targetCorpusInput.value = "";
+      sipAmountError.textContent = "";
+      annualReturnError.textContent = "";
+      yearsError.textContent = "";
+      inflationError.textContent = "";
+      targetCorpusError.textContent = "";
+      sipAmountWordsEl.textContent = "";
+      targetCorpusWordsEl.textContent = "";
+      if (swpMonthlyWordsEl) swpMonthlyWordsEl.textContent = "";
+      statusText.querySelector(".status-dot").classList.remove("error");
+      statusText.lastChild.nodeValue =
+        " Ready. Enter your SIP details to project your wealth.";
+
+      futureValueEl.textContent = "₹0.00";
+      totalInvestedEl.textContent = "₹0.00";
+      totalReturnsEl.textContent = "₹0.00";
+      inflationAdjustedEl.textContent = "₹0.00";
+      inflationTagEl.textContent = "";
+      requiredSipMetric.style.display = "none";
+      targetNote.style.display = "none";
+      lineChartMeta.textContent = "No data yet";
+      barChartMeta.textContent = "No data yet";
+
+      lastAccumulationFV = 0;
+      lastAccumulationYears = 0;
+      lastTotalInvested = 0;
+      lastSipSeries = null;
+      lastSwpResult = null;
+      document.getElementById("swpMonthly").value = "";
+      document.getElementById("swpStartYear").value = "";
+      document.getElementById("swpYears").value = "25";
+      document.getElementById("swpReturn").value = "8";
+      document.getElementById("swpInflationAdjusted").checked = false;
+      document.getElementById("swpContinueGrowth").checked = true;
+      updateSwpUI();
+
+      if (growthChartInstance) {
+        growthChartInstance.data.labels = [];
+        growthChartInstance.data.datasets[0].data = [];
+        growthChartInstance.data.datasets[1].data = [];
+        growthChartInstance.update();
+      }
+      if (allocationChartInstance) {
+        allocationChartInstance.data.labels = ["Invested", "Returns"];
+        allocationChartInstance.data.datasets[0].data = [0, 0];
+        allocationChartInstance.data.datasets[0].backgroundColor = ["#0ea5e9", "#22c55e"];
+        allocationChartInstance.update();
+      }
+    });
+
+    saveBtn.addEventListener("click", saveStateToLocalStorage);
+
+    const inputs = [
+      sipAmountInput,
+      annualReturnInput,
+      yearsInput,
+      inflationInput,
+      targetCorpusInput
+    ];
+
+    inputs.forEach(function (inputEl) {
+      inputEl.addEventListener("input", function () {
+        recompute();
+      });
+      inputEl.addEventListener("blur", function () {
+        if (inputEl.type === "number" && parseFloat(inputEl.value) < 0) {
+          inputEl.value = "";
+        }
+        recompute();
+      });
+    });
+
+    ["swpStartYear", "swpMonthly", "swpYears", "swpReturn"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("input", function () {
+          if (el.type === "number" && parseFloat(el.value) < 0) el.value = "";
+          if (id === "swpMonthly") updateAmountWords();
+          updateSwpUI();
+          if (lastSipSeries && lastAccumulationFV > 0) renderCharts(lastSipSeries, lastTotalInvested, lastAccumulationFV);
+        });
+      }
+    });
+    document.getElementById("swpInflationAdjusted").addEventListener("change", updateSwpUI);
+    document.getElementById("swpContinueGrowth").addEventListener("change", updateSwpUI);
+
+    yearsInput.addEventListener("input", function () {
+      var y = parseInt(yearsInput.value, 10);
+      var help = document.getElementById("swpStartYearHelp");
+      if (help && !isNaN(y) && y >= 1) help.textContent = "1 to " + y + ". Use " + y + " to start after SIP ends.";
+    });
+
+    exportCsvBtn.addEventListener("click", function () {
+      if (!lastSwpResult || !lastSwpResult.rows.length) return;
+      var csv = "Month,Opening Balance,Growth,Withdrawal,Closing Balance\n";
+      lastSwpResult.rows.forEach(function (row) {
+        csv += row.month + "," + row.opening.toFixed(2) + "," + row.growth.toFixed(2) + "," + row.withdrawal.toFixed(2) + "," + row.closing.toFixed(2) + "\n";
+      });
+      var a = document.createElement("a");
+      a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+      a.download = "swp-withdrawal-data.csv";
+      a.click();
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      restoreStateFromLocalStorage();
+      if (!sipAmountInput.value && !annualReturnInput.value && !yearsInput.value) {
+        sipAmountInput.value = 10000;
+        annualReturnInput.value = 12;
+        yearsInput.value = 20;
+        inflationInput.value = 5;
+        recompute();
+      }
+      if (!document.getElementById("swpYears").value) document.getElementById("swpYears").value = 25;
+      if (!document.getElementById("swpReturn").value) document.getElementById("swpReturn").value = 8;
+      var y = parseInt(yearsInput.value, 10);
+      if (!document.getElementById("swpStartYear").value && !isNaN(y) && y >= 1) document.getElementById("swpStartYear").value = y;
+      var help = document.getElementById("swpStartYearHelp");
+      if (help && !isNaN(y) && y >= 1) help.textContent = "1 to " + y + ". Use " + y + " to start after SIP ends.";
+    });
+  </script>
+</body>
+</html>
